@@ -1,54 +1,57 @@
-version: "3.8"
+version: '3'
+
 services:
   wordpress:
     image: wordpress:fpm-alpine
-    container_name: wordpress
+    restart: always
+    environment:
+      WORDPRESS_DB_HOST: mariadb
+      WORDPRESS_DB_USER: root
+      WORDPRESS_DB_PASSWORD: 030121034
+      WORDPRESS_DB_NAME: vize
+    volumes:
+      - wordpress:/var/www/html
     depends_on:
       - mariadb
-    environment:
-      - WORDPRESS_DB_HOST=mariadb
-      - WORDPRESS_DB_USER=wordpress
-      - WORDPRESS_DB_PASSWORD=030121034
-      - WORDPRESS_DB_NAME=wordpress
-    volumes:
-      - wordpress_data:/var/www/html
 
   mariadb:
     image: mariadb
-    container_name: mariadb
+    restart: always
     environment:
-      - MYSQL_ROOT_PASSWORD=030121034
-      - MYSQL_DATABASE=wordpress
-      - MYSQL_USER=wordpress
-      - MYSQL_PASSWORD=030121034
+      MYSQL_ROOT_PASSWORD: 030121034
+      MYSQL_DATABASE: vize
+      MYSQL_USER: root
+      MYSQL_PASSWORD: 030121034
     volumes:
-      - db_data:/var/lib/mysql
+      - mariadb:/var/lib/mysql
 
   nginx:
     image: nginx
-    container_name: nginx
-    depends_on:
-      - wordpress
-    volumes:
-      - ./nginx/certs:/etc/nginx/certs
-      - ./nginx/vhost:/etc/nginx/vhost.d
+    restart: always
     ports:
       - "80:80"
       - "443:443"
+    volumes:
+      - nginx:/etc/nginx/conf.d
+      - wordpress:/var/www/html
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    depends_on:
+      - wordpress
 
   certbot:
     image: certbot/certbot
-    container_name: certbot
+    restart: always
     volumes:
-      - ./certbot/conf:/etc/letsencrypt
-      - ./certbot/www:/var/www/certbot
+      - certbot-etc:/etc/letsencrypt
+      - certbot-var:/var/lib/letsencrypt
+    command: certonly --webroot --webroot-path=/var/www/html --email aydinnursena25@gmail.com --agree-tos --no-eff-email -d nursena.me
     depends_on:
       - nginx
-    environment:
-      - DOMAINS=nursena.me
-      - EMAIL=030121034@std.izu.edu.tr
-
 
 volumes:
-  wordpress_data:
-  db_data:
+  wordpress:
+  mariadb:
+  nginx:
+  certbot-etc:
+  certbot-var:
